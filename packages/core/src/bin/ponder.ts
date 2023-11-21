@@ -39,8 +39,6 @@ cli
   .action(async (cliOptions: CliOptions) => {
     if (cliOptions.help) process.exit(0);
 
-    validateNodeVersion();
-
     const options = buildOptions({ cliOptions });
     const devOptions = { ...options, uiEnabled: true };
 
@@ -56,8 +54,6 @@ cli
   .action(async (cliOptions: CliOptions) => {
     if (cliOptions.help) process.exit(0);
 
-    validateNodeVersion();
-
     const options = buildOptions({ cliOptions });
     const startOptions = { ...options, uiEnabled: false };
 
@@ -72,8 +68,6 @@ cli
   .command("codegen", "Emit type files, then exit")
   .action(async (cliOptions: CliOptions) => {
     if (cliOptions.help) process.exit(0);
-
-    validateNodeVersion();
 
     const options = buildOptions({ cliOptions });
     const codegenOptions = {
@@ -93,8 +87,6 @@ cli
   .command("serve", "Start the web server")
   .action(async (cliOptions: CliOptions) => {
     if (cliOptions.help) process.exit(0);
-
-    validateNodeVersion();
 
     const options = buildOptions({ cliOptions });
     const devOptions = { ...options, uiEnabled: true };
@@ -121,10 +113,3 @@ function registerKilledProcessListener(fn: () => Promise<unknown>) {
   process.on("SIGQUIT", listener); // Keyboard quit
   process.on("SIGTERM", listener); // `kill` command
 }
-
-const validateNodeVersion = () => {
-  if (Number(process.version.split(".")[0].slice(1)) < 18)
-    throw Error(
-      `Node version:${process.version} does not meet the >=18 requirement`,
-    );
-};

@@ -6,6 +6,7 @@ import {
   HttpRequestError,
   InvalidParamsRpcError,
   LimitExceededRpcError,
+  numberToHex,
   type RpcBlock,
   type RpcLog,
   type RpcTransaction,
@@ -131,12 +132,12 @@ export class HistoricalSyncService extends Emittery<HistoricalSyncEvents> {
     common,
     syncStore,
     network,
-    sources = [],
+    sources,
   }: {
     common: Common;
     syncStore: SyncStore;
     network: Network;
-    sources?: Source[];
+    sources: Source[];
   }) {
     super();
 
@@ -168,8 +169,6 @@ export class HistoricalSyncService extends Emittery<HistoricalSyncEvents> {
           });
 
         if (sourceIsLogFilter(source)) {
-          // Log filter
-
           if (!isHistoricalSyncRequired) {
             this.logFilterProgressTrackers[source.id] = new ProgressTracker({
               target: [startBlock, finalizedBlockNumber],
@@ -774,7 +773,7 @@ export class HistoricalSyncService extends Emittery<HistoricalSyncEvents> {
     const stopClock = startClock();
     const block = (await this.network.client.request({
       method: "eth_getBlockByNumber",
-      params: [toHex(blockNumber), true],
+      params: [numberToHex(blockNumber), true],
     })) as RpcBlock & { transactions: RpcTransaction[] };
     this.common.metrics.ponder_historical_rpc_request_duration.observe(
       { method: "eth_getBlockByNumber", network: this.network.name },

@@ -268,66 +268,6 @@ export class ProgressTracker {
   }
 }
 
-// export class BlockProgressTracker {
-//   private pendingBlocks: number[] = [];
-// private completedBlocks: {
-//   blockNumber: number;
-//   blockTimestamp: number;
-// }[] = [];
-
-//   addPendingBlocks({ blockNumbers }: { blockNumbers: number[] }): void {
-//     blockNumbers.forEach((blockNumber) => {
-//       if (
-//         this.pendingBlocks.length > 0 &&
-//         blockNumber < this.pendingBlocks[this.pendingBlocks.length - 1]
-//       ) {
-//         throw new Error(
-//           `Pending block number ${blockNumber} was added out of order. Already added block number ${
-//             this.pendingBlocks[this.pendingBlocks.length - 1]
-//           }.`
-//         );
-//       }
-//       this.pendingBlocks.push(blockNumber);
-//     });
-//   }
-
-//   addCompletedBlock({
-//     blockNumber,
-//     blockTimestamp,
-//   }: {
-//     blockNumber: number;
-//     blockTimestamp: number;
-//   }) {
-//     if (!this.pendingBlocks.includes(blockNumber)) {
-//       throw new Error(
-//         `Block number ${blockNumber} was not pending. Ensure to add blocks as pending before marking them as completed.`
-//       );
-//     }
-
-//     this.completedBlocks.push({ blockNumber, blockTimestamp });
-//     this.completedBlocks.sort((a, b) => a.blockNumber - b.blockNumber);
-
-//     if (this.completedBlocks[0].blockNumber !== this.pendingBlocks[0]) {
-//       return null;
-//     }
-
-//     let checkpoint: {
-//       blockNumber: number;
-//       blockTimestamp: number;
-//     } | null = null;
-
-//     for (let i = 0; i < this.completedBlocks.length; i++) {
-//       if (this.completedBlocks[i].blockNumber === this.pendingBlocks[i]) {
-//         checkpoint = this.completedBlocks[i];
-//       } else {
-//         break;
-//       }
-//     }
-
-//     return checkpoint;
-//   }
-// }
-
 export class BlockProgressTracker {
   private pendingBlocks: number[] = [];
 
@@ -344,20 +284,17 @@ export class BlockProgressTracker {
     const sorted = blockNumbers.sort((a, b) => a - b);
     const minNewPendingBlock = sorted[0];
 
-    if (
-      this.pendingBlocks.length > 0 &&
-      minNewPendingBlock <= maxPendingBlock
-    ) {
+    if (maxPendingBlock && minNewPendingBlock <= maxPendingBlock) {
       throw new Error(
         `New pending block number ${minNewPendingBlock} was added out of order. Already added block number ${maxPendingBlock}.`,
       );
     }
 
-    sorted.forEach((blockNumber) => {
-      this.pendingBlocks.push(blockNumber);
-    });
+    this.pendingBlocks.push(...sorted);
   }
 
+  // remove from pending
+  // return min safe
   addCompletedBlock({
     blockNumber,
     blockTimestamp,
