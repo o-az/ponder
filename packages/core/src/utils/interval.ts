@@ -268,6 +268,12 @@ export class ProgressTracker {
   }
 }
 
+/**
+ * The goal of this class is to keep track of which block is the maximum "safe" block.
+ *
+ * A block is considered safe if every block before it has also been completed.
+ *
+ */
 export class BlockProgressTracker {
   private pendingBlocks: number[] = [];
 
@@ -293,8 +299,6 @@ export class BlockProgressTracker {
     this.pendingBlocks.push(...sorted);
   }
 
-  // remove from pending
-  // return min safe
   addCompletedBlock({
     blockNumber,
     blockTimestamp,
@@ -314,12 +318,19 @@ export class BlockProgressTracker {
     this.pendingBlocks.splice(pendingBlockIndex, 1);
 
     // Add the new completed block to the completed block list, and maintain the sort order.
-    // Note that this could be optimized using a for loop with a break.
-    this.completedBlocks.push({
-      blockNumber,
-      blockTimestamp,
-    });
-    this.completedBlocks.sort((a, b) => a.blockNumber - b.blockNumber);
+    let insertIndex = this.completedBlocks.findIndex(
+      (b) => blockNumber < b.blockNumber,
+    );
+    insertIndex =
+      insertIndex === -1 ? this.completedBlocks.length : insertIndex;
+    this.completedBlocks = [
+      ...this.completedBlocks.slice(0, insertIndex),
+      {
+        blockNumber,
+        blockTimestamp,
+      },
+      ...this.completedBlocks.slice(insertIndex),
+    ];
 
     // If the pending blocks list is now empty, return the max block present in
     // the list of completed blocks. This happens at the end of the sync.
@@ -327,23 +338,24 @@ export class BlockProgressTracker {
       return this.completedBlocks[this.completedBlocks.length - 1];
     }
 
-    // Find all completed blocks that are less than the minimum pending block.
-    // These blocks are "safe".
-    const safeCompletedBlocks = this.completedBlocks.filter(
-      ({ blockNumber }) => blockNumber < this.pendingBlocks[0],
-    );
+    // Find the index where the blocks flip from safe to unsafe
+    let safeCompletedIndex =
+      this.completedBlocks.findIndex(
+        (b) => b.blockNumber > this.pendingBlocks[0],
+      ) - 1;
+    safeCompletedIndex =
+      safeCompletedIndex === -2
+        ? this.completedBlocks.length - 1
+        : safeCompletedIndex;
 
     // If there are no safe blocks, the first pending block has not been completed yet.
-    if (safeCompletedBlocks.length === 0) return null;
+    if (safeCompletedIndex === -1) return null;
 
-    const maximumSafeCompletedBlock =
-      safeCompletedBlocks[safeCompletedBlocks.length - 1];
+    const maximumSafeCompletedBlock = this.completedBlocks[safeCompletedIndex];
 
     // Remove all safe completed blocks that are less than the new checkpoint.
     // This avoid a memory leak and speeds up subsequent calls.
-    this.completedBlocks = this.completedBlocks.filter(
-      ({ blockNumber }) => blockNumber >= maximumSafeCompletedBlock.blockNumber,
-    );
+    this.completedBlocks = this.completedBlocks.slice(safeCompletedIndex);
 
     return maximumSafeCompletedBlock;
   }

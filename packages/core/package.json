@@ -80,6 +80,7 @@
     "@types/retry": "^0.12.5",
     "@types/supertest": "^2.0.16",
     "@viem/anvil": "^0.0.6",
+    "mitata": "^0.1.6",
     "supertest": "^6.3.3",
     "tsup": "^7.3.0",
     "typescript": "^5.2.2",
