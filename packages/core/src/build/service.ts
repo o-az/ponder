@@ -4,17 +4,17 @@ import path from "node:path";
 import Emittery from "emittery";
 import { glob } from "glob";
 import type { GraphQLSchema } from "graphql";
-// @ts-ignore
-import type { ViteDevServer } from "vite";
-// @ts-ignore
-import type { ViteNodeRunner } from "vite-node/client";
-// @ts-ignore
-import type { ViteNodeServer } from "vite-node/server";
+import { createServer, type ViteDevServer } from "vite";
+import { ViteNodeRunner } from "vite-node/client";
+import { ViteNodeServer } from "vite-node/server";
+import { installSourcemapsSupport } from "vite-node/source-map";
+import { normalizeModuleId, toFilePath } from "vite-node/utils";
 
 import type { Config } from "@/config/config.js";
 import type { Common } from "@/Ponder.js";
 import type { Schema } from "@/schema/types.js";
 import { buildGqlSchema } from "@/server/graphql/schema.js";
+import { normalizeDirectory } from "@/utils/path.js";
 
 import {
   type IndexingFunctions,
@@ -47,12 +47,6 @@ export class BuildService extends Emittery<BuildServiceEvents> {
   }
 
   async setup() {
-    const { createServer } = await import("vite");
-    const { ViteNodeServer } = await import("vite-node/server");
-    const { installSourcemapsSupport } = await import("vite-node/source-map");
-    const { ViteNodeRunner } = await import("vite-node/client");
-    const { toFilePath, normalizeModuleId } = await import("vite-node/utils");
-
     const viteLogger = {
       warnedMessages: new Set<string>(),
       loggedErrors: new WeakSet<Error>(),
@@ -154,10 +148,7 @@ export class BuildService extends Emittery<BuildServiceEvents> {
       }
 
       const srcRegex = new RegExp(
-        `^${this.common.options.srcDir.replace(
-          /[.*+?^${}()|[\]\\]/g,
-          "\\$&",
-        )}/.*\\.(js|ts)$`,
+        `^${normalizeDirectory(this.common.options.srcDir)}/.*\\.(js|ts)$`,
       );
       const srcFiles = invalidated.filter((file) => srcRegex.test(file));
 
@@ -170,13 +161,13 @@ export class BuildService extends Emittery<BuildServiceEvents> {
     // TODO: Debounce, de-duplicate, and batch updates.
 
     this.viteDevServer.watcher.on("change", async (file) => {
-      const ignoreRegex = new RegExp(
-        `^${this.common.options.ponderDir.replace(
-          /[.*+?^${}()|[\]\\]/g,
-          "\\$&",
-        )}/.*[^/]$`,
+      const ponderDirRegex = new RegExp(
+        `^${normalizeDirectory(this.common.options.ponderDir)}/.*[^/]$`,
       );
-      if (ignoreRegex.test(file)) return;
+      const generatedDirRegex = new RegExp(
+        `^${normalizeDirectory(this.common.options.generatedDir)}/.*[^/]$`,
+      );
+      if (ponderDirRegex.test(file) || generatedDirRegex.test(file)) return;
 
       await handleFileChange([file]);
     });
