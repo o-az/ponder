@@ -9,6 +9,8 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "numeric",
   second: "numeric",
+  fractionalSecondDigits: 2,
+  hourCycle: "h23",
 });
 
 export class LoggerService {
