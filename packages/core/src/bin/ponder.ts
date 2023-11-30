@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import inspector from "node:inspector/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { cac } from "cac";
@@ -34,6 +37,36 @@ export type CliOptions = {
   configFile: string;
   rootDir: string;
 };
+
+cli
+  .command("profile", "Start the development server")
+  .action(async (cliOptions: CliOptions) => {
+    if (cliOptions.help) process.exit(0);
+
+    validateNodeVersion();
+
+    const options = buildOptions({ cliOptions });
+    const startOptions = { ...options, uiEnabled: false };
+
+    const ponder = new Ponder({ options: startOptions });
+    registerKilledProcessListener(async () => {
+      const { profile } = await session.post("Profiler.stop");
+      writeFileSync(
+        join(process.cwd(), "..", "..", "profile.cpuprofile"),
+        JSON.stringify(profile),
+      );
+      ponder.kill();
+    });
+
+    const session = new inspector.Session();
+    session.connect();
+
+    await session.post("Profiler.enable");
+    await session.post("Profiler.start");
+
+    await ponder.setup();
+    await ponder.start();
+  });
 
 cli
   .command("dev", "Start the development server")
