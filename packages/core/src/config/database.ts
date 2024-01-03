@@ -4,7 +4,7 @@ import type { Common } from "@/Ponder.js";
 import type { Config } from "@/config/config.js";
 import pg from "@/utils/pg.js";
 
-type StoreConfig =
+export type StoreConfig =
   | {
       kind: "sqlite";
       file: string;
