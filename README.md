@@ -1,4 +1,4 @@
-# Pondeer
+# Ponder
 
 [![CI status][ci-badge]][ci-url]
 [![Version][version-badge]][version-url]
