@@ -45,6 +45,10 @@ declare module "vitest" {
 }
 
 beforeEach((context) => {
+  setupContext(context);
+});
+
+export const setupContext = (context: TestContext) => {
   const options = {
     ...buildOptions({
       cliOptions: { configFile: "", rootDir: "" },
@@ -58,7 +62,7 @@ beforeEach((context) => {
     metrics: new MetricsService(),
     telemetry: new TelemetryService({ options }),
   };
-});
+};
 
 /**
  * Sets up an isolated SyncStore on the test context.
@@ -188,7 +192,7 @@ export async function setupAnvil(context: TestContext) {
   const addresses = await deploy();
   const pair = await simulate(addresses);
 
-  context.networks = await getNetworks();
+  context.networks = await getNetworks(context.common);
   context.sources = getSources(addresses) as [LogFilter, Factory];
   context.config = getConfig(addresses);
   context.erc20 = { address: addresses.erc20Address };

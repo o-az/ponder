@@ -1,3 +1,8 @@
+import type { Common, Ponder } from "@/Ponder.js";
+import { type Config, createConfig } from "@/config/config.js";
+import { buildNetwork } from "@/config/networks.js";
+import { type Source, buildSources } from "@/config/sources.js";
+import type { Checkpoint } from "@/utils/checkpoint.js";
 import type {
   BlockTag,
   Chain,
@@ -22,13 +27,6 @@ import {
   toHex,
 } from "viem";
 import { mainnet } from "viem/chains";
-
-import type { Common, Ponder } from "@/Ponder.js";
-import { type Config, createConfig } from "@/config/config.js";
-import { buildNetwork } from "@/config/networks.js";
-import { type Source, buildSources } from "@/config/sources.js";
-import type { Checkpoint } from "@/utils/checkpoint.js";
-
 import { ALICE } from "./constants.js";
 import { erc20ABI, factoryABI, pairABI } from "./generated.js";
 import type { deploy } from "./simulate.js";
@@ -83,6 +81,7 @@ export const getConfig = (
       mainnet: {
         chainId: 1,
         transport: http(`http://127.0.0.1:8545/${poolId}`),
+        maxRequestsPerSecond: 1,
       },
     },
     contracts: {
@@ -107,11 +106,18 @@ export const getConfig = (
  * Returns a network representing the local anvil chain.
  * Set `finalityBlockCount` to 4 because `deploy()` + `simulate()` is 4 blocks.
  */
-export const getNetworks = async () => {
+export const getNetworks = async (
+  common: Common,
+  maxRequestsPerSecond = 100,
+) => {
   const network = await buildNetwork({
     networkName: "mainnet",
-    network: { chainId: 1, transport: http(`http://127.0.0.1:8545/${poolId}`) },
-    common: { logger: { warn: () => {} } } as unknown as Common,
+    network: {
+      chainId: 1,
+      transport: http(`http://127.0.0.1:8545/${poolId}`),
+      maxRequestsPerSecond,
+    },
+    common,
   });
 
   return [{ ...network, finalityBlockCount: 4 }];

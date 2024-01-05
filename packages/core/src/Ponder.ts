@@ -1,8 +1,5 @@
 import path from "node:path";
 import process from "node:process";
-
-import type { GraphQLSchema } from "graphql";
-
 import type { IndexingFunctions } from "@/build/functions.js";
 import { BuildService } from "@/build/service.js";
 import { CodegenService } from "@/codegen/service.js";
@@ -28,6 +25,7 @@ import { SqliteSyncStore } from "@/sync-store/sqlite/store.js";
 import { type SyncStore } from "@/sync-store/store.js";
 import { TelemetryService } from "@/telemetry/service.js";
 import { UiService } from "@/ui/service.js";
+import type { GraphQLSchema } from "graphql";
 
 export type Common = {
   options: Options;
@@ -311,10 +309,8 @@ export class Ponder {
       await Promise.all(
         this.syncServices.map(async ({ historical, realtime }) => {
           const blockNumbers = await realtime.setup();
-          await historical.setup(blockNumbers);
-
-          historical.start();
           await realtime.start();
+          await historical.start(blockNumbers);
         }),
       );
     } catch (error_) {
@@ -413,6 +409,13 @@ export class Ponder {
       },
     });
 
+    await Promise.all(
+      this.syncServices.map(async ({ realtime, network }) => {
+        network.requestQueue.kill();
+        await realtime.kill();
+      }),
+    );
+
     this.uiService.kill();
 
     await Promise.all([
@@ -421,13 +424,6 @@ export class Ponder {
       await this.serverService.kill(),
       await this.common.telemetry.kill(),
     ]);
-
-    await Promise.all(
-      this.syncServices.map(async ({ realtime, historical }) => {
-        await realtime.kill();
-        await historical.kill();
-      }),
-    );
 
     await this.indexingStore.kill();
     await this.syncStore.kill();
@@ -459,9 +455,11 @@ export class Ponder {
     ]);
 
     await Promise.all(
-      this.syncServices.map(async ({ realtime, historical }) => {
+      this.syncServices.map(async ({ realtime, network }) => {
+        network.requestQueue.kill();
+        network.requestQueue.clear();
+
         await realtime.kill();
-        await historical.kill();
       }),
     );
 
@@ -493,9 +491,11 @@ export class Ponder {
         // while building or validating the config on a hot reload.
         await this.indexingService.kill();
         await Promise.all(
-          this.syncServices.map(async ({ realtime, historical }) => {
+          this.syncServices.map(async ({ realtime, network }) => {
             await realtime.kill();
-            await historical.kill();
+
+            network.requestQueue.kill();
+            network.requestQueue.clear();
           }),
         );
       }
@@ -549,6 +549,24 @@ export class Ponder {
         this.syncGatewayService.handleHistoricalSyncComplete({
           chainId: network.chainId,
         });
+      });
+
+      historical.on("error", async () => {
+        this.common.logger.fatal({
+          service: "app",
+          msg: "Historical sync service failed: killing app",
+        });
+
+        await this.kill();
+      });
+
+      realtime.on("error", async () => {
+        this.common.logger.fatal({
+          service: "app",
+          msg: "Realtime sync service failed: killing app",
+        });
+
+        await this.kill();
       });
 
       realtime.on("realtimeCheckpoint", (checkpoint) => {
@@ -628,11 +646,13 @@ export class Ponder {
 
       // Reload the sync services for the specific chain by killing, setting up, and then starting again.
       await syncServiceForChainId.realtime.kill();
-      await syncServiceForChainId.historical.kill();
 
+      let blockNumbers: {
+        latestBlockNumber: number;
+        finalizedBlockNumber: number | undefined;
+      };
       try {
-        const blockNumbers = await syncServiceForChainId.realtime.setup();
-        await syncServiceForChainId.historical.setup(blockNumbers);
+        blockNumbers = await syncServiceForChainId.realtime.setup();
       } catch (error_) {
         const error = error_ as Error;
         error.stack = undefined;
@@ -642,10 +662,11 @@ export class Ponder {
           error,
         });
         this.kill();
+        // NOTE: Should we return here?
       }
 
       await syncServiceForChainId.realtime.start();
-      syncServiceForChainId.historical.start();
+      await syncServiceForChainId.historical.start(blockNumbers!);
 
       // NOTE: We have to reset the historical state after restarting the sync services
       // otherwise the state will be out of sync.

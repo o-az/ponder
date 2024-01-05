@@ -196,8 +196,8 @@ export type Network = {
   transport: Transport;
   /** Polling frequency (in ms). Default: `1_000`. */
   pollingInterval?: number;
-  /** Maximum concurrency of tasks during the historical sync. Default: `20`. */
-  maxHistoricalTaskConcurrency?: number;
+  /** Maximum number of RPC requests per second. Default: `100`. */
+  maxRequestsPerSecond?: number;
 };
 
 type Option = {
