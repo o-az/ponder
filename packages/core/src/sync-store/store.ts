@@ -147,25 +147,28 @@ export interface SyncStore {
   /** EVENTS METHOD */
 
   getLogEvents(arg: {
-    fromCheckpoint: Checkpoint;
-    toCheckpoint: Checkpoint;
+    sources: {
+      fromCheckpoint: Checkpoint;
+      toCheckpoint: Checkpoint;
+
+      logFilters: {
+        id: string;
+        chainId: number;
+        criteria: LogFilterCriteria;
+        fromBlock?: number;
+        toBlock?: number;
+        includeEventSelectors?: Hex[];
+      }[];
+      factories: {
+        id: string; // Note that this is the source ID of the child contract.
+        chainId: number;
+        criteria: FactoryCriteria;
+        fromBlock?: number;
+        toBlock?: number;
+        includeEventSelectors?: Hex[];
+      }[];
+    }[];
     limit: number;
-    logFilters?: {
-      id: string;
-      chainId: number;
-      criteria: LogFilterCriteria;
-      fromBlock?: number;
-      toBlock?: number;
-      includeEventSelectors?: Hex[];
-    }[];
-    factories?: {
-      id: string; // Note that this is the source ID of the child contract.
-      chainId: number;
-      criteria: FactoryCriteria;
-      fromBlock?: number;
-      toBlock?: number;
-      includeEventSelectors?: Hex[];
-    }[];
   }): Promise<
     {
       events: {

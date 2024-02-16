@@ -821,42 +821,50 @@ export class PostgresSyncStore implements SyncStore {
   };
 
   async getLogEvents({
-    fromCheckpoint,
-    toCheckpoint,
+    sources,
     limit,
-    logFilters = [],
-    factories = [],
   }: {
-    fromCheckpoint: Checkpoint;
-    toCheckpoint: Checkpoint;
+    sources: {
+      fromCheckpoint: Checkpoint;
+      toCheckpoint: Checkpoint;
+      logFilters: {
+        id: string;
+        chainId: number;
+        criteria: LogFilterCriteria;
+        fromBlock?: number;
+        toBlock?: number;
+        includeEventSelectors?: Hex[];
+      }[];
+      factories: {
+        id: string;
+        chainId: number;
+        criteria: FactoryCriteria;
+        fromBlock?: number;
+        toBlock?: number;
+        includeEventSelectors?: Hex[];
+      }[];
+    }[];
     limit: number;
-    logFilters?: {
-      id: string;
-      chainId: number;
-      criteria: LogFilterCriteria;
-      fromBlock?: number;
-      toBlock?: number;
-      includeEventSelectors?: Hex[];
-    }[];
-    factories?: {
-      id: string;
-      chainId: number;
-      criteria: FactoryCriteria;
-      fromBlock?: number;
-      toBlock?: number;
-      includeEventSelectors?: Hex[];
-    }[];
   }) {
     const start = performance.now();
+
+    const sourceIds: Map<(typeof sources)[number], string[]> = new Map();
+
+    for (const source of sources) {
+      const ids = source.logFilters
+        .map((l) => l.id)
+        .concat(source.factories.map((f) => f.id));
+      sourceIds.set(source, ids);
+    }
 
     const baseQuery = this.db
       .with(
         "sources(source_id)",
         () =>
           sql`( values ${sql.join(
-            [...logFilters.map((f) => f.id), ...factories.map((f) => f.id)].map(
-              (id) => sql`( ${sql.val(id)} )`,
-            ),
+            sources
+              .flatMap((s) => sourceIds.get(s))
+              .map((id) => sql`( ${sql.val(id)} )`),
           )} )`,
       )
       .selectFrom("logs")
@@ -864,35 +872,38 @@ export class PostgresSyncStore implements SyncStore {
       .leftJoin("transactions", "transactions.hash", "logs.transactionHash")
       .innerJoin("sources", (join) => join.onTrue())
       .where((eb) => {
-        const logFilterCmprs = logFilters.map((logFilter) => {
-          const exprs = this.buildLogFilterCmprs({ eb, logFilter });
-          if (logFilter.includeEventSelectors) {
-            exprs.push(
-              eb.or(
-                logFilter.includeEventSelectors.map((t) =>
-                  eb("logs.topic0", "=", t),
-                ),
-              ),
-            );
-          }
-          return eb.and(exprs);
-        });
+        return eb.or(
+          sources.map(({ logFilters, factories }) => {
+            const logFilterCmprs = logFilters.map((logFilter) => {
+              const exprs = this.buildLogFilterCmprs({ eb, logFilter });
+              if (logFilter.includeEventSelectors) {
+                exprs.push(
+                  eb.or(
+                    logFilter.includeEventSelectors.map((t) =>
+                      eb("logs.topic0", "=", t),
+                    ),
+                  ),
+                );
+              }
+              return eb.and(exprs);
+            });
 
-        const factoryCmprs = factories.map((factory) => {
-          const exprs = this.buildFactoryCmprs({ eb, factory });
-          if (factory.includeEventSelectors) {
-            exprs.push(
-              eb.or(
-                factory.includeEventSelectors.map((t) =>
-                  eb("logs.topic0", "=", t),
-                ),
-              ),
-            );
-          }
-          return eb.and(exprs);
-        });
-
-        return eb.or([...logFilterCmprs, ...factoryCmprs]);
+            const factoryCmprs = factories.map((factory) => {
+              const exprs = this.buildFactoryCmprs({ eb, factory });
+              if (factory.includeEventSelectors) {
+                exprs.push(
+                  eb.or(
+                    factory.includeEventSelectors.map((t) =>
+                      eb("logs.topic0", "=", t),
+                    ),
+                  ),
+                );
+              }
+              return eb.and(exprs);
+            });
+            return eb.or([...logFilterCmprs, ...factoryCmprs]);
+          }),
+        );
       });
 
     // Get full log objects, including the includeEventSelectors clause.
@@ -953,8 +964,17 @@ export class PostgresSyncStore implements SyncStore {
         "transactions.value as tx_value",
         "transactions.v as tx_v",
       ])
-      .where((eb) => this.buildCheckpointCmprs(eb, ">", fromCheckpoint))
-      .where((eb) => this.buildCheckpointCmprs(eb, "<=", toCheckpoint))
+      .where((eb) =>
+        eb.or(
+          sources.map((source) =>
+            eb.and([
+              eb("sources.source_id", "in", sourceIds.get(source)),
+              this.buildCheckpointCmprs(eb, ">", source.fromCheckpoint),
+              this.buildCheckpointCmprs(eb, "<=", source.toCheckpoint),
+            ]),
+          ),
+        ),
+      )
       .orderBy("blocks.timestamp", "asc")
       .orderBy("logs.chainId", "asc")
       .orderBy("blocks.number", "asc")
@@ -1054,6 +1074,7 @@ export class PostgresSyncStore implements SyncStore {
         transaction: Transaction;
       };
     });
+    this.record("getLogEvents", performance.now() - start);
 
     // Query for the checkpoint of the last event in the requested range (ignore the batch limit)
     const lastCheckpointRows = await baseQuery
@@ -1063,7 +1084,7 @@ export class PostgresSyncStore implements SyncStore {
         "blocks.number as block_number",
         "logs.logIndex as log_logIndex",
       ])
-      .where((eb) => this.buildCheckpointCmprs(eb, "<=", toCheckpoint))
+      // .where((eb) => this.buildCheckpointCmprs(eb, "<=", toCheckpoint))
       .orderBy("blocks.timestamp", "desc")
       .orderBy("logs.chainId", "desc")
       .orderBy("blocks.number", "desc")
@@ -1081,8 +1102,6 @@ export class PostgresSyncStore implements SyncStore {
             logIndex: lastCheckpointRow.log_logIndex,
           } satisfies Checkpoint)
         : undefined;
-
-    this.record("getLogEvents", performance.now() - start);
 
     if (events.length === limit + 1) {
       events.pop();
