@@ -12,6 +12,13 @@ patchedDependencies:
 importers:
 
   .:
+    dependencies:
+      '@types/bun':
+        specifier: ^1.0.6
+        version: 1.0.6
+      bun:
+        specifier: ^1.0.28
+        version: 1.0.28
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.4.1
@@ -3642,6 +3649,54 @@ packages:
     engines: {node: '>=8.0.0'}
     dev: false
 
+  /@oven/bun-darwin-aarch64@1.0.28:
+    resolution: {integrity: sha512-6wfvHpBAM+4FitGTYOpSnZ4X79j9vQlJoyP+kTeHma2h/2UmyvUUdtYtzQJ/dcdiNzSDRwWOSkt1iDRPOsn+Ng==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@oven/bun-darwin-x64-baseline@1.0.28:
+    resolution: {integrity: sha512-4/wnvq4/PufThDqaZLn4l7LXwTG4IO7+Scd1LQ5z4W783X7hPnaRWpps1/2lEIskrsCBdgpyLolEr/u0NhaM9w==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@oven/bun-darwin-x64@1.0.28:
+    resolution: {integrity: sha512-ujucsd8y4Uq0w3Sp+kj7dYiscj1QGGGWcAVHq4qAfvYcJa+ApKf3OLBo+aifYpEC7OKro0g76kNFd4h9fY/OeA==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@oven/bun-linux-aarch64@1.0.28:
+    resolution: {integrity: sha512-PGECrkAVZDZdLFSGNZai8bcr06A8rrSWaMv4s3qEZ+IAGDNs5uFPasD8BaKdPWz7pXNTh3AFB203VwFq7atQkw==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@oven/bun-linux-x64-baseline@1.0.28:
+    resolution: {integrity: sha512-tpQvbjHvLIOZx4DInOQOawyH00Sg/MqwCbtg/y27r3oRTGHjjrm/09RgqP0nUATofDhdoLYy20iWLlnMKePuFg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@oven/bun-linux-x64@1.0.28:
+    resolution: {integrity: sha512-lb8hkLylJ1m55AU5TGL3N6HAJVyCSMxzgdtzTkVsxMggkDYk0l3r4j3ktfqlCVi2Gb65b0BBIXA9/gowEMDG7w==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@parcel/watcher-android-arm64@2.3.0:
     resolution: {integrity: sha512-f4o9eA3dgk0XRT3XhB0UWpWpLnKgrh1IwNJKJ7UJek7eTYccQ8LR7XUWFKqw6aEq5KUNlCcGvSzKqSX/vtWVVA==}
     engines: {node: '>= 10.0.0'}
@@ -4459,6 +4514,12 @@ packages:
       '@types/node': 20.10.6
     dev: true
 
+  /@types/bun@1.0.6:
+    resolution: {integrity: sha512-RtBfd9vxT4LmgKtENsJeM5j0Kwy+CyIEY8Z99oPdh5SZWjZAIEsNdSCeAO3q3GBiNWXjJ5IIJPjDQdwSeKiRFA==}
+    dependencies:
+      bun-types: 1.0.27
+    dev: false
+
   /@types/cli-progress@3.11.5:
     resolution: {integrity: sha512-D4PbNRbviKyppS5ivBGyFO29POlySLmA2HyUFE4p5QGazAMM3CwkKWcvTl8gvElSuxRh6FPKL8XmidX873ou4g==}
     dependencies:
@@ -4643,6 +4704,12 @@ packages:
     dependencies:
       undici-types: 5.26.5
 
+  /@types/node@20.11.19:
+    resolution: {integrity: sha512-7xMnVEcZFu0DikYjWOlRq7NTPETrm7teqUT2WkQjrTIkEgUyyGdWsj/Zg8bEJt5TNklzbPD1X3fqfsHw3SpapQ==}
+    dependencies:
+      undici-types: 5.26.5
+    dev: false
+
   /@types/node@8.10.66:
     resolution: {integrity: sha512-tktOkFUA4kXx2hhhrB8bIFb5TbwzS4uOhKEmwiD+NoiL0qtP2OQ9mFldbgD4dV1djrlBYP6eBuQZiWjuHUpqFw==}
     dev: true
@@ -4767,6 +4834,12 @@ packages:
     dependencies:
       '@types/node': 20.10.6
     dev: true
+
+  /@types/ws@8.5.10:
+    resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
+    dependencies:
+      '@types/node': 20.11.19
+    dev: false
 
   /@typescript-eslint/parser@6.17.0(eslint@8.56.0)(typescript@5.3.3):
     resolution: {integrity: sha512-C4bBaX2orvhK+LlwrY8oWGmSl4WolCfYm513gEccdWZj0CwGadbIADb0FtVEcI+WzUyjyoBj2JRP8g25E6IB8A==}
@@ -5648,9 +5721,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.12.0
     dev: false
@@ -6359,6 +6429,28 @@ packages:
     resolution: {integrity: sha512-qwVpFEHNfhYJIzNRBvd2C1kyo6jz3ZSMPyyuR47OPdiKWlbYnZNyDWuyR175qDnAJLiCo5fBBqPb3RiXgWlkOQ==}
     dependencies:
       semver: 7.5.4
+    dev: false
+
+  /bun-types@1.0.27:
+    resolution: {integrity: sha512-fwaJ3Ey6InD4nAkUd+AwzHDmxGdWWRy/SWh0QQEw7QF/ABnoqSv+iQrA5tIK4TyUyR/V9446G+w53+sOmJOJyA==}
+    dependencies:
+      '@types/node': 20.11.19
+      '@types/ws': 8.5.10
+    dev: false
+
+  /bun@1.0.28:
+    resolution: {integrity: sha512-tTxCYdwBcSPblIoBOyEshe6n5/Ga6K0VTzucJV/OfsCpJpnRh1iN3snLntTF4HD20HuTFZIfDqUnjrRtLNBc7A==}
+    cpu: [arm64, x64]
+    os: [darwin, linux]
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      '@oven/bun-darwin-aarch64': 1.0.28
+      '@oven/bun-darwin-x64': 1.0.28
+      '@oven/bun-darwin-x64-baseline': 1.0.28
+      '@oven/bun-linux-aarch64': 1.0.28
+      '@oven/bun-linux-x64': 1.0.28
+      '@oven/bun-linux-x64-baseline': 1.0.28
     dev: false
 
   /bundle-require@3.1.2(esbuild@0.16.17):
